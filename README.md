@@ -97,3 +97,56 @@ Here is an example of merging the weights of SD and ResNet-based JSCC
     
 ### Train the conditional diffusion model
 
+OpenImage dataset
+
+    python train.py --config ./configs/train_cldm.yaml --name 'cldm_cnn_OpenImage' --refresh_rate 1
+   
+Note that the paths within `/configs/train_cldm.yaml` need to be modified.
+
+## Inference
+
+Kodak dataset
+
+    python inference_cldm.py \
+    	--input ./data/Kodak \
+    	--config configs/model/cldm_cnn.yaml \
+    	--ckpt path/to/the/cldm/checkpoint \
+    	--steps 50 \
+    	--sr_scale 1 \
+    	--color_fix_type wavelet \
+    	--output output/folder \
+    	--device cuda \
+    	--repeat_times 5 \
+    	--SNR 1 \    
+            --use_lang \
+            --use_guidance --g_scale 100 --g_t_start 1001 --g_t_stop -1 --g_repeat 1 \ # remove this if don't want intermediate guidance
+            --show_lq \
+
+
+## Pre-trained weights
+
+Will provide pre-trained weights soon
+
+## Visualizations
+
+
+## Acknowledgement 
+
+This project is largely based on [DiffBIR](https://github.com/XPixelGroup/DiffBIR) and [SwinJSCC](https://github.com/semcomm/SwinJSCC). Thanks for their awesome work.
+
+## Reference
+
+> Mingyu Yang, Bowen Liu, Boyang Wang, Hun-Seok Kim, "Diffusion-Aided Joint Source Channel Coding For High Realism Wireless Image Transmission"
+
+    @article{yang2024diffusion,
+      title={Diffusion-Aided Joint Source Channel Coding For High Realism Wireless Image Transmission},
+      author={Yang, Mingyu and Liu, Bowen and Wang, Boyang and Kim, Hun-Seok},
+      journal={arXiv preprint arXiv:2404.17736},
+      year={2024}
+    }
+
+
+
+
+
+
