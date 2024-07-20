@@ -1,0 +1,26 @@
+target: model.deepjscc_swin.DeepJSCC_SWIN
+params:
+  img_size_h: 256
+  img_size_w: 256
+  patch_size: 2
+  in_chans: 3
+  embed_dims: [128, 192, 256, 320]
+  embed_dims_d: [320, 256, 192, 128]
+  depths: [2, 2, 2, 2]
+  depths_d: [2, 2, 2, 2]
+  num_heads: [4, 6, 8, 10]
+  num_heads_d: [10, 8, 6, 4]
+  bottleneck_dim: 4
+  window_size: 8
+  mlp_ratio: 4.
+  qkv_bias: True
+  qk_scale: null
+  patch_norm: True
+  SNR_low: 0
+  SNR_high: 14
+  loss_type: 'MSE'
+  channel: 'AWGN'
+  # Learning rate.
+  learning_rate: 1e-4
+  weight_decay: 0
+  max_iteration: 100001

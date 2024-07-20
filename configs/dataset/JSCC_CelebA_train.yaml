@@ -1,0 +1,17 @@
+dataset:
+  target: dataset.dataset.DiffJSCCDataset
+  params:
+    # Path to the file list.
+    file_list: /nfs/turbo/coe-hunseok/mingyuy/codes/DiffJSCC/datalist/CelebAHQ/train.list
+    out_size: 512
+    crop_type: center
+    use_hflip: True
+
+data_loader:
+  batch_size: 16
+  shuffle: true
+  num_workers: 8
+  drop_last: true
+
+batch_transform:
+  target: dataset.batch_transform.IdentityBatchTransform

@@ -1,0 +1,17 @@
+dataset:
+  target: dataset.dataset.DiffJSCCDataset
+  params:
+    # Path to the file list.
+    file_list: /nfs/turbo/coe-hunseok/mingyuy/codes/DiffJSCC/datalist/OpenImage/train.list
+    out_size: 512
+    crop_type: random
+    use_hflip: True
+
+data_loader:
+  batch_size: 8
+  shuffle: true
+  num_workers: 8
+  drop_last: true
+
+batch_transform:
+  target: dataset.batch_transform.IdentityBatchTransform

@@ -1,0 +1,116 @@
+target: model.cldm.ControlLDM
+params:
+  linear_start: 0.00085
+  linear_end: 0.0120
+  num_timesteps_cond: 1
+  log_every_t: 200
+  timesteps: 1000
+  first_stage_key: "jpg"
+  cond_stage_key: "txt"
+  control_key: "jpg"
+  image_size: 64
+  channels: 4
+  cond_stage_trainable: false
+  conditioning_key: crossattn
+  monitor: val/loss_simple_ema
+  scale_factor: 0.18215
+  use_ema: False
+  use_lang: True        # Use the textual features
+  use_true_lang: False  # Use the texttual features from the original image
+  use_replace: False    # Manipulate the generated text with manually designed prompts
+  
+  sd_locked: True
+  only_mid_control: False
+  # Learning rate.
+  learning_rate: 1e-4
+  
+  control_stage_config:
+    target: model.cldm.ControlNet
+    params:
+      use_checkpoint: True
+      image_size: 32 # unused
+      in_channels: 4
+      hint_channels: 4
+      model_channels: 320
+      attention_resolutions: [ 4, 2, 1 ]
+      num_res_blocks: 2
+      channel_mult: [ 1, 2, 4, 4 ]
+      num_head_channels: 64 # need to fix for flash-attn
+      use_spatial_transformer: True
+      use_linear_in_transformer: True
+      transformer_depth: 1
+      context_dim: 1024
+      legacy: False
+      use_snr: True       # Use the channel state information
+      min_snr: 0          # The minimum SNR while training/testing
+      snr_scale: 100      # Scale factor for SNR
+
+  unet_config:
+    target: model.cldm.ControlledUnetModel
+    params:
+      use_checkpoint: True
+      image_size: 32 # unused
+      in_channels: 4
+      out_channels: 4
+      model_channels: 320
+      attention_resolutions: [ 4, 2, 1 ]
+      num_res_blocks: 2
+      channel_mult: [ 1, 2, 4, 4 ]
+      num_head_channels: 64 # need to fix for flash-attn
+      use_spatial_transformer: True
+      use_linear_in_transformer: True
+      transformer_depth: 1
+      context_dim: 1024
+      legacy: False
+
+  first_stage_config:
+    target: ldm.models.autoencoder.AutoencoderKL
+    params:
+      embed_dim: 4
+      monitor: val/rec_loss
+      ddconfig:
+        #attn_type: "vanilla-xformers"
+        double_z: true
+        z_channels: 4
+        resolution: 256
+        in_channels: 3
+        out_ch: 3
+        ch: 128
+        ch_mult:
+        - 1
+        - 2
+        - 4
+        - 4
+        num_res_blocks: 2
+        attn_resolutions: []
+        dropout: 0.0
+      lossconfig:
+        target: torch.nn.Identity 
+
+  cond_stage_config:
+    target: ldm.modules.encoders.modules.FrozenOpenCLIPEmbedder
+    params:
+      freeze: True
+      layer: "penultimate"
+  
+  # The settings of the pre-trained JSCC encoder and decoder
+  # Should be the same structure as the pre-trained weights
+  preprocess_config:                     
+    target: model.deepjscc_cnn.DeepJSCC
+    params:
+      input_nc: 3
+      ngf: 64
+      max_ngf_E: 384
+      max_ngf_D: 384
+      n_downsample: 4
+      norm: 'batch'
+      init_type: 'normal'
+      init_gain: 0.02
+      C_channel: 4
+      output_nc: 3
+      n_blocks_E: 4
+      n_blocks_D: 4
+      SNR_low: 0
+      SNR_high: 14
+      loss_type: 'MSE'
+      channel: 'AWGN'

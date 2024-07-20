@@ -1,0 +1,23 @@
+target: model.deepjscc_cnn.DeepJSCC
+params:
+  input_nc: 3
+  ngf: 64
+  max_ngf_E: 384
+  max_ngf_D: 384
+  n_downsample: 4
+  norm: 'batch'
+  init_type: 'normal'
+  init_gain: 0.02 
+  C_channel: 4
+  output_nc: 3
+  n_blocks_E: 4
+  n_blocks_D: 4
+  SNR_low: 0
+  SNR_high: 14
+  loss_type: 'MSE'
+  channel: 'AWGN'
+  # Learning rate.
+  min_lr: 1e-6
+  learning_rate: 1e-3
+  weight_decay: 0
+  max_iteration: 100001
