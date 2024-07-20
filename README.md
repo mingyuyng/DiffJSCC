@@ -129,6 +129,13 @@ Will provide pre-trained weights soon
 
 ## Visualizations
 
+### Kodak Images (R=1/128 cpp, SNR=1dB)
+
+<img src="images/visualization_kodak.png" alt="kodak" width="700"/>
+
+### CelebAHQ Images (R=1/256 cpp, SNR=-5dB)
+
+<img src="images/visualization_celebA.png" alt="celebA" width="700"/>
 
 ## Acknowledgement 
 
