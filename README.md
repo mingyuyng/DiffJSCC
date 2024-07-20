@@ -87,3 +87,13 @@ Note that the data paths in `configs/dataset/JSCC_CelebA_train.yaml` and `config
 
 ### Merge the Stable Diffusion weights with the JSCC encoder and decoder
 
+Here is an example of merging the weights of SD and ResNet-based JSCC
+
+    python scripts/make_stage2_init_weight.py \
+               --cldm_config configs/model/cldm_cnn.yaml \
+               --sd_weight v2-1_512-ema-pruned.ckpt\
+               --jscc_weight path/to/the/weights \
+               --output ./init_weights/weights_cnn.ckpt
+    
+### Train the conditional diffusion model
+
