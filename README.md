@@ -29,3 +29,18 @@ We also provide other datasets including CelebAHQ512 and Kodak. The readers coul
 
 ### Data folder structure
 
+```plaintext
+/data                            # Root directory
+|-- /OpenImage                   # Open Image dataset
+|   |-- /018ed13fabd94731.jpg             
+|   |-- /00e48838f27aa1a3.jpg         
+|-- /CelebAHQ_train_512          # CelebAHQ train set
+|   |-- /0.png              
+|   |-- /1.png 
+|-- /CelebAHQ_test_512           # CelebAHQ test set
+|   |-- /27000.png              
+|   |-- /27001.png
+|-- /Kodak                       # Kodak dataset
+|   |-- /1.png              
+|   |-- /2.png 
+```
