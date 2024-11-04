@@ -69,6 +69,12 @@ class MSEGuidance(Guidance):
     @torch.enable_grad()
     def _forward(self, target_x0: torch.Tensor, pred_x0: torch.Tensor) -> torch.Tensor:
         
-        return (target_x0 - pred_x0)/pred_x0.shape[1]*pred_x0.shape[2]*pred_x0.shape[3]
+        # inputs: [-1, 1], nchw, rgb
+
+        # Measure the MSE 
+        loss = (pred_x0 - target_x0).pow(2).mean((1, 2, 3)).sum()
+        print(f"loss = {loss.item()}")
+        
+        return (target_x0 - pred_x0)/(pred_x0.shape[1]*pred_x0.shape[2]*pred_x0.shape[3])
 
 

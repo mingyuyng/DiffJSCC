@@ -1,0 +1,22 @@
+--extra-index-url https://download.pytorch.org/whl/cu116
+torch==1.13.1+cu116
+torchvision==0.14.1+cu116
+xformers==0.0.16
+pytorch_lightning==1.4.2
+einops
+open-clip-torch
+omegaconf
+torchmetrics==0.6.0
+triton==2.0.0
+opencv-python-headless
+scipy
+matplotlib
+lpips
+gradio
+chardet
+git+https://github.com/huggingface/transformers.git
+facexlib
+pytorch_msssim
+numpy==1.24.1
+open-clip-torch==2.24.0
+

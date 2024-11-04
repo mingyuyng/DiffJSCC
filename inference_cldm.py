@@ -101,12 +101,12 @@ def process(
         text_img = None
     
 
-
+    
     x_T = None #torch.randn(shape, device=model.device, dtype=torch.float32)
     samples = sampler.sample(
         steps=steps, shape=shape, cond_img=img_init, cond_snr=cond_snr, cond_text=cond_text,
         positive_prompt="", negative_prompt="", x_T=x_T,
-        cfg_scale=1.0, cond_fn=cond_fn
+        cfg_scale=1.0, cond_fn=cond_fn, color_fix_type=color_fix_type
     )
     x_samples = samples.clamp(0, 1)
 
@@ -141,7 +141,7 @@ def parse_args() -> Namespace:
 
     # latent image guidance
     parser.add_argument("--use_guidance", action="store_true")
-    parser.add_argument("--g_scale", type=float, default=0.0)
+    parser.add_argument("--Lambda", type=float, default=0.0)
     parser.add_argument("--g_t_start", type=int, default=1001)
     parser.add_argument("--g_t_stop", type=int, default=-1)
     parser.add_argument("--g_space", type=str, default="latent")
@@ -152,7 +152,7 @@ def parse_args() -> Namespace:
     parser.add_argument("--show_lq", action="store_true")
     parser.add_argument("--skip_if_exist", action="store_true")
 
-    parser.add_argument("--seed", type=int, default=231)
+    parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--device", type=str, default="cuda", choices=["cpu", "cuda", "mps"])
 
     return parser.parse_args()
@@ -191,6 +191,9 @@ def main() -> None:
     lpips_metric = LPIPS(net="alex").to(args.device)
 
     model: ControlLDM = instantiate_from_config(OmegaConf.load(args.config))
+    
+    weights = torch.load(args.ckpt, map_location="cpu")
+
     load_state_dict(model, torch.load(args.ckpt, map_location="cpu"), strict=False)
     
     model.freeze()
@@ -209,6 +212,7 @@ def main() -> None:
     for i, file_path in enumerate(list_image_files(args.input, follow_links=True)):
 
         lq = Image.open(file_path).convert("RGB")
+
         lq_resized = auto_resize(lq, 512)
         x = pad(np.array(lq_resized), scale=64)
 
@@ -224,7 +228,7 @@ def main() -> None:
             # initialize latent image guidance
             if args.use_guidance:
                 cond_fn = MSEGuidance(
-                    scale=args.g_scale, t_start=args.g_t_start, t_stop=args.g_t_stop,
+                    scale=args.Lambda, t_start=args.g_t_start, t_stop=args.g_t_stop,
                     space=args.g_space, repeat=args.g_repeat
                 )
             else:

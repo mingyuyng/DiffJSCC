@@ -352,8 +352,7 @@ class ControlLDM(LatentDiffusion):
         if self.use_lang:
             self.processor = Blip2Processor.from_pretrained("Salesforce/blip2-opt-2.7b")
             self.blip_model = Blip2ForConditionalGeneration.from_pretrained(
-                "Salesforce/blip2-opt-2.7b", torch_dtype=torch.float16, max_length=32
-            )
+                "Salesforce/blip2-opt-2.7b", torch_dtype=torch.float16, max_length=32)
             frozen_module(self.blip_model)
 
         self.transform_to_pil = transforms.ToPILImage()
@@ -399,7 +398,7 @@ class ControlLDM(LatentDiffusion):
                     input_img.append(self.transform_to_pil(img_t[b]))
                 else:
                     input_img.append(self.transform_to_pil(img_init[b]))
-                
+            
             inputs = self.processor(images=input_img, return_tensors="pt", max_length=32).to(self.device, torch.float16)
             generated_ids = self.blip_model.generate(**inputs)
             generated_text = self.processor.batch_decode(generated_ids, skip_special_tokens=True)
