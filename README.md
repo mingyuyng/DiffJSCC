@@ -150,13 +150,15 @@ CelebAHQ dataset
 | CelebAHQ_C2.ckpt    | DiffJSCC trained on CelebAHQ dataset with C_channel=2 (CBR=1/768)   | [Download](https://drive.google.com/file/d/14fn0uy-wkTgMwIAVpvwWQOCQBNJbca7s/view?usp=drive_link) |
 | CelebAHQ_C8.ckpt    | DiffJSCC trained on CelebAHQ dataset with C_channel=8 (CBR=1/192)   | [Download](https://drive.google.com/file/d/1gd_sAJqApUkYlXmq8XamNAGhiopzMjbS/view?usp=drive_link) |
 
+When applying the pre-trained weights, please also assign the correct `C_channel` variable in `cldm_cnn.yaml` or `cldm_cnn_celebA.yaml`. 
+
 ## Visualizations
 
-### Kodak Images (R=1/128 cpp, SNR=1dB)
+### Kodak Images (CBR=1/384, SNR=1dB)
 
 <img src="images/visualization_kodak.png" alt="kodak" width="700"/>
 
-### CelebAHQ Images (R=1/256 cpp, SNR=-5dB)
+### CelebAHQ Images (CBR=1/768, SNR=-5dB)
 
 <img src="images/visualization_celebA.png" alt="celebA" width="700"/>
 
