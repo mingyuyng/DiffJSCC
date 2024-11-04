@@ -119,13 +119,36 @@ Kodak dataset
     	--repeat_times 5 \
     	--SNR 1 \    
             --use_lang \
-            --use_guidance --g_scale 100 --g_t_start 1001 --g_t_stop -1 --g_repeat 1 \ # remove this if don't want intermediate guidance
             --show_lq \
+            --use_guidance --Lambda 100 --g_t_start 1001 --g_t_stop -1 --g_repeat 1 \ # remove this if don't want intermediate guidance
+            
+CelebAHQ dataset
+
+    python inference_cldm.py \
+    	--input ./data/CelebAHQ_test_512 \
+    	--config configs/model/cldm_cnn_celebA.yaml \
+    	--ckpt path/to/the/cldm/checkpoint \
+    	--steps 50 \
+    	--sr_scale 1 \
+    	--color_fix_type wavelet \
+    	--output output/folder \
+    	--device cuda \
+    	--repeat_times 1 \
+    	--SNR -5 \    
+            --use_lang \
+            --show_lq \
+            --use_guidance --Lambda 100 --g_t_start 1001 --g_t_stop -1 --g_repeat 1 \ # remove this if don't want intermediate guidance
+            
 
 
 ## Pre-trained weights
 
-Will provide pre-trained weights soon
+| Model Name    | Description | Link |
+| -------- | ------- | ------- |
+| OpenImage_C4.ckpt  | DiffJSCC trained on OpenImage dataset with C_channel=4 (CBR=1/384)    | [Download](https://drive.google.com/file/d/1vK9UXNOl0GFBl3DK3Xxvyy3K92SKhXTG/view?usp=drive_link) |
+| OpenImage_C16.ckpt | DiffJSCC trained on OpenImage dataset with C_channel=16 (CBR=1/96)    | [Download](https://drive.google.com/file/d/1SS-T1mtsguUV47Vbi4Jsyk6JbzoVDqYI/view?usp=drive_link) |
+| CelebAHQ_C2.ckpt    | DiffJSCC trained on CelebAHQ dataset with C_channel=2 (CBR=1/768)   | [Download](https://drive.google.com/file/d/14fn0uy-wkTgMwIAVpvwWQOCQBNJbca7s/view?usp=drive_link) |
+| CelebAHQ_C8.ckpt    | DiffJSCC trained on CelebAHQ dataset with C_channel=8 (CBR=1/192)   | [Download](https://drive.google.com/file/d/1gd_sAJqApUkYlXmq8XamNAGhiopzMjbS/view?usp=drive_link) |
 
 ## Visualizations
 
