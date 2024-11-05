@@ -1,9 +1,15 @@
-# DiffJSCC
 
-The repository contains the code for [Diffusion-Aided Joint Source Channel Coding for High Realism Wireless Image Transmission (arxiv)](https://arxiv.org/pdf/2404.17736). 
+<div align="center">
+    
+# Diffusion-Aided Joint Source Channel Coding for High Realism Wireless Image Transmission
+
+[![Paper](https://img.shields.io/badge/arXiv-Paper-b31b1b?logo=arxiv&logoColor=white)](http://arxiv.org/abs/2404.17736) 
 
 <img src="images/Main.png" alt="overview" width="700"/>
 
+</div>
+
+This is the official implementation of "Diffusion-Aided Joint Source Channel Coding for High Realism Wireless Image Transmission"
 
 ## Installation
 
