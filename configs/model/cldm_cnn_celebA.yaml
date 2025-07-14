@@ -16,9 +16,6 @@ params:
   scale_factor: 0.18215
   use_ema: False
   use_lang: True        # Use the textual features
-  use_true_lang: False  # Use the texttual features from the original image
-  use_replace: False    # Manipulate the generated text with manually designed prompts
-  
   sd_locked: True
   only_mid_control: False
   # Learning rate.

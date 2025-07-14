@@ -33,9 +33,6 @@ def process(
     strength: float,
     color_fix_type: str,
     cond_fn: Optional[MSEGuidance],
-    use_lang: bool,
-    use_true_lang: bool,
-    use_replace: bool,
 ) -> Tuple[List[np.ndarray], List[np.ndarray]]:
     """
     Apply DiffBIR model on a list of low-quality images.
@@ -72,36 +69,17 @@ def process(
     height, width = img_t.size(-2), img_t.size(-1)
     shape = (n_samples, 4, height // 8, width // 8)
 
-    if use_lang:
-        input_img = []
-        for b in range(img_t.shape[0]):
-            if use_true_lang:
-                input_img.append(model.transform_to_pil(img_t[b]))
-            else:
-                input_img.append(model.transform_to_pil(img_init[b]))
+    input_img = []
+    for b in range(img_t.shape[0]):
+        input_img.append(model.transform_to_pil(img_init[b]))
 
-        inputs = model.processor(images=input_img, return_tensors="pt", max_length=32).to(img_t.device, torch.float16)
-        generated_ids = model.blip_model.generate(**inputs)
-        generated_text = model.processor.batch_decode(generated_ids, skip_special_tokens=True)
+    inputs = model.processor(images=input_img, return_tensors="pt", max_length=32).to(img_t.device, torch.float16)
+    generated_ids = model.blip_model.generate(**inputs)
+    generated_text = model.processor.batch_decode(generated_ids, skip_special_tokens=True)
 
-        if not use_true_lang and use_replace:
-            for b in range(len(generated_text)):
-                generated_text[b] = (generated_text[b].replace("blurry", "high quality")
-                             .replace("a painting of", "a high quality image of")
-                             .replace("a photo of", "a high quality image of")
-                             .replace("a picture of", "a high quality image of"))
-                if "a high quality image of" not in generated_text[b]:
-                    generated_text[b] = "a high quality image of " + generated_text[b]     # Replace 'blurry' to 'clear'
+    cond_text = model.get_learned_conditioning(generated_text)
+    text_img = (log_txt_as_img((512, 512), generated_text, size=16) + 1) / 2
 
-        cond_text = model.get_learned_conditioning(generated_text)
-        text_img = (log_txt_as_img((512, 512), generated_text, size=16) + 1) / 2
-
-    else:
-        cond_text = None
-        text_img = None
-    
-
-    
     x_T = None #torch.randn(shape, device=model.device, dtype=torch.float32)
     samples = sampler.sample(
         steps=steps, shape=shape, cond_img=img_init, cond_snr=cond_snr, cond_text=cond_text,
@@ -127,16 +105,10 @@ def parse_args() -> Namespace:
 
     # TODO: add help info for these options
     parser.add_argument("--ckpt", required=True, type=str, help="full checkpoint path")
-    parser.add_argument("--config", required=True, type=str, help="model config path")
-
     parser.add_argument("--input", type=str, required=True)
     parser.add_argument("--steps", required=True, type=int)
-    parser.add_argument("--sr_scale", type=float, default=1)
     parser.add_argument("--repeat_times", type=int, default=1)
     parser.add_argument("--disable_preprocess_model", action="store_true")
-    parser.add_argument("--use_lang", action="store_true")
-    parser.add_argument("--use_true_lang", action="store_true")
-    parser.add_argument("--use_replace", action="store_true")
     parser.add_argument("--SNR", type=float, default=1)
 
     # latent image guidance
@@ -186,17 +158,14 @@ def check_device(device):
 def main() -> None:
     args = parse_args()
     pl.seed_everything(args.seed)
-
     args.device = check_device(args.device)
+
+    # Set up LPIPS metric
     lpips_metric = LPIPS(net="alex").to(args.device)
-
-    model: ControlLDM = instantiate_from_config(OmegaConf.load(args.config))
     
-    weights = torch.load(args.ckpt, map_location="cpu")
-
-    load_state_dict(model, torch.load(args.ckpt, map_location="cpu"), strict=False)
-    
-    model.freeze()
+    # Load the DiffJSCC model
+    model = ControlLDM.from_pretrained(args.ckpt)
+    model.eval()
     model.to(args.device)
     
     # Set up the channel SNR
@@ -210,9 +179,9 @@ def main() -> None:
     PSNR_jscc, MSSSIM_jscc, Lpips_jscc  = [], [], []
 
     for i, file_path in enumerate(list_image_files(args.input, follow_links=True)):
-
+        
+        # Read, resize, and pad the input image
         lq = Image.open(file_path).convert("RGB")
-
         lq_resized = auto_resize(lq, 512)
         x = pad(np.array(lq_resized), scale=64)
 
@@ -238,8 +207,7 @@ def main() -> None:
                 model, [x], steps=args.steps,
                 strength=1,
                 color_fix_type=args.color_fix_type,
-                cond_fn=cond_fn, use_lang=args.use_lang, 
-                use_true_lang=args.use_true_lang, use_replace=args.use_replace
+                cond_fn=cond_fn,
             )
 
             pred, jscc_pred  = preds[0], jscc_preds[0]
@@ -247,7 +215,8 @@ def main() -> None:
             # remove padding
             pred = pred[:lq_resized.height, :lq_resized.width, :]
             jscc_pred = jscc_pred[:lq_resized.height, :lq_resized.width, :]
-
+            
+            # resize 
             pred_np = np.array(Image.fromarray(pred).resize(lq.size, Image.LANCZOS))
             jscc_pred_np = np.array(Image.fromarray(jscc_pred).resize(lq.size, Image.LANCZOS))
             lq_np = np.array(lq)
@@ -298,11 +267,6 @@ def main() -> None:
         print(f'PSNR: {psnr_jscc:.4f}->{psnr:.4f}')
         print(f'MSSSIM: {msssim_jscc:.4f}->{msssim:.4f}')
         print(f'LPIPS: {lpips_jscc:.4f}->{lpips:.4f}')
-
-
-    avg_PSNR = np.mean(PSNR)
-    avg_msssim = np.mean(MSSSIM)
-    avg_lpips = np.mean(Lpips)
 
     print(f'PSNR:  prev: {np.mean(PSNR_jscc):.4f}, after: {np.mean(PSNR):.4f}')
     print(f'MSSSIM:  prev: {np.mean(MSSSIM_jscc):.4f}, after: {np.mean(MSSSIM):.4f}')

@@ -1,6 +1,8 @@
 from typing import Mapping, Any
 import copy
 from collections import OrderedDict
+import os 
+from omegaconf import OmegaConf
 
 import einops
 import torch
@@ -19,9 +21,10 @@ from ldm.modules.diffusionmodules.openaimodel import TimestepEmbedSequential, Re
 from ldm.models.diffusion.ddpm import LatentDiffusion
 from ldm.util import log_txt_as_img, exists, instantiate_from_config
 from ldm.modules.distributions.distributions import DiagonalGaussianDistribution
-from utils.common import frozen_module
+from utils.common import frozen_module, load_state_dict
 from .spaced_sampler import SpacedSampler
 from transformers import Blip2Processor, Blip2ForConditionalGeneration
+from transformers.utils.hub import cached_file
 from torchvision import transforms
 
 
@@ -278,7 +281,7 @@ class ControlNet(nn.Module):
         )
         self.middle_block_out = self.make_zero_conv(ch)
         self._feature_size += ch
-
+    
     def make_zero_conv(self, channels):
         return TimestepEmbedSequential(zero_module(conv_nd(self.dims, channels, channels, 1, padding=0)))
 
@@ -318,8 +321,6 @@ class ControlLDM(LatentDiffusion):
         learning_rate: float,
         preprocess_config,
         use_lang,
-        use_true_lang,
-        use_replace,
         *args,
         **kwargs
     ) -> "ControlLDM":
@@ -333,8 +334,6 @@ class ControlLDM(LatentDiffusion):
         self.learning_rate = learning_rate
         self.control_scales = [1.0] * 13
         self.use_lang = use_lang
-        self.use_true_lang = use_true_lang
-        self.use_replace = use_replace
 
         # instantiate JSCC model
         self.preprocess_model = instantiate_from_config(preprocess_config)
@@ -356,6 +355,26 @@ class ControlLDM(LatentDiffusion):
             frozen_module(self.blip_model)
 
         self.transform_to_pil = transforms.ToPILImage()
+    
+    def from_pretrained(pretrained_model_name):
+        if os.path.exists(pretrained_model_name):
+            return ControlLDM.from_pretrained_local(pretrained_model_name)
+        else:
+            return ControlLDM.from_pretrained_hub(pretrained_model_name)
+    
+    def from_pretrained_local(pretrained_model_name):
+        config = f"{pretrained_model_name}/config.yaml"
+        ckpt = f"{pretrained_model_name}/model.ckpt"
+        model = instantiate_from_config(OmegaConf.load(config))
+        load_state_dict(model, torch.load(ckpt, map_location="cpu", weights_only=False), strict=False)
+        return model
+
+    def from_pretrained_hub(pretrained_model_name):
+        resolved_config = cached_file(pretrained_model_name, "config.yaml", _raise_exceptions_for_missing_entries=False)
+        resolved_ckpt= cached_file(pretrained_model_name, "model.ckpt", _raise_exceptions_for_missing_entries=False)
+        model = instantiate_from_config(OmegaConf.load(resolved_config))
+        load_state_dict(model, torch.load(resolved_ckpt, map_location="cpu", weights_only=False), strict=False)
+        return model
 
     def apply_condition_encoder(self, control):
         c_latent_meanvar = self.cond_encoder(control * 2 - 1)
@@ -394,24 +413,11 @@ class ControlLDM(LatentDiffusion):
         if self.use_lang:
             input_img = []
             for b in range(img_t.shape[0]):
-                if self.use_true_lang:
-                    input_img.append(self.transform_to_pil(img_t[b]))
-                else:
-                    input_img.append(self.transform_to_pil(img_init[b]))
+                input_img.append(self.transform_to_pil(img_init[b]))
             
             inputs = self.processor(images=input_img, return_tensors="pt", max_length=32).to(self.device, torch.float16)
             generated_ids = self.blip_model.generate(**inputs)
-            generated_text = self.processor.batch_decode(generated_ids, skip_special_tokens=True)
-
-            if not self.use_true_lang and self.use_replace:
-                for b in range(len(generated_text)):
-                    generated_text[b] = (generated_text[b].replace("blurry", "high quality")
-                                 .replace("a painting of", "a high quality image of")
-                                 .replace("a photo of", "a high quality image of")
-                                 .replace("a picture of", "a high quality image of"))
-                    if "a high quality image of" not in generated_text[b]:
-                        generated_text[b] = "a high quality image of " + generated_text[b]  
-                                                 
+            generated_text = self.processor.batch_decode(generated_ids, skip_special_tokens=True)                                
             c = self.get_learned_conditioning(generated_text)            
         else:
             generated_text = batch['txt']
